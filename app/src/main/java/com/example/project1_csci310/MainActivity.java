@@ -25,8 +25,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean playing = true;
     private int clicked_index;
     Set<Integer> set;
-    // save the TextViews of all cells in an array, so later on,
-    // when a TextView is clicked, we know which cell it is
     private ArrayList<TextView> cell_tvs;
 
     private int dpToPixel(int dp) {
