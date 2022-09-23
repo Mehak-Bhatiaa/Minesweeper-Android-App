@@ -3,6 +3,7 @@ package com.example.project1_csci310;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.gridlayout.widget.GridLayout;
 
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -13,24 +14,29 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+
 
 public class MainActivity extends AppCompatActivity {
     private int clock = 0;
     private int flag_count = 4;
     private boolean running = true;
     private boolean mining = true;
-    private boolean winning = true;
-    private boolean playing = true;
+    boolean winning = true;
+    boolean playing = true;
     private int clicked_index;
+    ArrayList<Boolean> visited = new ArrayList<Boolean>();
+    Queue<Integer> cells = new LinkedList<Integer>();
     Set<Integer> set;
     private ArrayList<TextView> cell_tvs;
 
-    private int dpToPixel(int dp) {
-        float density = Resources.getSystem().getDisplayMetrics().density;
-        return Math.round(dp * density);
-    }
+//    private int dpToPixel(int dp) {
+//        float density = Resources.getSystem().getDisplayMetrics().density;
+//        return Math.round(dp * density);
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             clock = savedInstanceState.getInt("clock");
             running = savedInstanceState.getBoolean("running");
+        }
+
+        for(int i = 0; i < 80; i++) {
+            visited.add(false);
         }
 
         runTimer();
@@ -80,26 +90,35 @@ public class MainActivity extends AppCompatActivity {
         TextView tv = (TextView) view;
         final TextView flagView = (TextView) findViewById(R.id.textView01);
         int n = findIndexOfCellTextView(tv);
-
+    if(!winning && mining) {
+        Intent intent = new Intent(this, ResultActivity.class);
+        intent.putExtra("Used seconds: ",clock);
+        intent.putExtra("You", winning);
+        startActivity(intent);
+        return;
+    }
         tv.setText(String.valueOf(n));
         clicked_index = n;
         tv.setTextColor(Color.GRAY);
         tv.setBackgroundColor(Color.LTGRAY);
-        int num_mines = checkNeighboringCells(clicked_index);
-        if(num_mines == 0 && mining && (tv.getText() != getString(R.string.mine))) {
-            revealNeighboringCells(clicked_index);
-        }
 
-        if(set.contains(clicked_index)){
+        if(set.contains(clicked_index) && mining){
             cell_tvs.get(clicked_index).setText(getString(R.string.mine));
             winning = false;
             playing = false;
             running = false;
+
+            return;
         }
-        if(!mining) {
-            if(flag_count == 1) {
-                mining = true;
+
+        if(mining) {
+            cells.add(clicked_index);
+            while (!cells.isEmpty()) {
+                checkNeighboringCells(cells.peek());
             }
+        }
+
+        if(!mining) {
             cell_tvs.get(clicked_index).setText(getString(R.string.flag));
             cell_tvs.get(clicked_index).setBackgroundColor(Color.GREEN);
             flag_count--;
@@ -115,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onToggle(View view) {
         final TextView modeView = (TextView) findViewById(R.id.textView31);
-        if(mining && (flag_count > 0)) {
+        if(mining) {
             mining = false;
             modeView.setText(getString(R.string.flag));
         }
@@ -158,13 +177,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int checkNeighboringCells(int index) {
-//        CharSequence text =  cell_tvs.get(index).getText();
-//        String mine = getString(R.string.mine);
+    private void checkNeighboringCells(int index) {
         int mine_count = 0;
+        visited.set(index, true);
+        cell_tvs.get((index)).setBackgroundColor(Color.LTGRAY);
+        cell_tvs.get((index)).setTextColor(Color.GRAY);
         if(set.contains(index)) {
             //end game
             cell_tvs.get(index).setText(getString(R.string.mine));
+            return;
         }
         // top and bottom
         if(index > 7) {
@@ -173,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         if(index < 72) {
+
             if(set.contains((index+8))) {
                 mine_count++;
             }
@@ -180,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
 
         // - _ -
         if(index > 0 && ((index % 8) != 0)) {
+
             if(set.contains((index-1))) {
                 mine_count++;
             }
@@ -214,65 +237,128 @@ public class MainActivity extends AppCompatActivity {
                 mine_count++;
             }
         }
-
         if(mine_count != 0) {
             cell_tvs.get(index).setText(String.valueOf(mine_count));
         }
         else {
             cell_tvs.get(index).setText("");
-        }
+            addToQueue(index);
 
-        return mine_count;
+        }
+        cells.remove();
     }
 
-    private void revealNeighboringCells(int index) {
-        if(index > 7) {
-            cell_tvs.get((index - 8)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index - 8)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index-8);
-        }
-        if(index < 72) {
-            cell_tvs.get((index + 8)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index + 8)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index+8);
-        }
+//    private void revealNeighboringCells(int index, int mine_count) {
+//        if (mine_count == 0) {
+//            if (index > 7) {
+//                cell_tvs.get((index - 8)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index - 8)).setTextColor(Color.GRAY);
+////                cells.add((index - 8));
+////            checkNeighboringCells(index - 8);
+//            }
+//            if (index < 72) {
+//                cell_tvs.get((index + 8)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index + 8)).setTextColor(Color.GRAY);
+////                cells.add((index + 8));
+////            checkNeighboringCells(index + 8);
+//            }
+//
+//            // - _ -
+//            if (index > 0 && ((index % 8) != 0)) {
+//                cell_tvs.get((index - 1)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index - 1)).setTextColor(Color.GRAY);
+////            cells.add((index - 1));
+////                checkNeighboringCells(index - 1);
+//            }
+//            if (index < 79 && ((index - 7) % 8 != 0)) {
+//                cell_tvs.get((index + 1)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index + 1)).setTextColor(Color.GRAY);
+////            checkNeighboringCells(index + 1);
+////                cells.add((index + 1));
+//            }
+//
+//            // /
+//            if (index > 7 && ((index - 7) % 8 != 0)) {
+//                cell_tvs.get((index - 7)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index - 7)).setTextColor(Color.GRAY);
+////                cells.add((index - 7));
+////            checkNeighboringCells(index - 7);
+//            }
+//            if (index < 72 && (index % 8 != 0)) {
+//                cell_tvs.get((index + 7)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index + 7)).setTextColor(Color.GRAY);
+////                cells.add((index + 7));
+////            checkNeighboringCells(index + 7);
+//            }
+//
+//            // \
+//            if (index > 7 && (index % 8 != 0)) {
+//                cell_tvs.get((index - 9)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index - 9)).setTextColor(Color.GRAY);
+////                cells.add((index - 9));
+////            checkNeighboringCells(index - 9);
+//            }
+//
+//            if (index < 72 && ((index - 7) % 8 != 0)) {
+//                cell_tvs.get((index + 9)).setBackgroundColor(Color.LTGRAY);
+//                cell_tvs.get((index + 9)).setTextColor(Color.GRAY);
+////                cells.add((index + 9));
+////            checkNeighboringCells(index + 9);
+//            }
+//        }
+//    }
 
-        // - _ -
-        if(index > 0 && ((index % 8) != 0)) {
-            cell_tvs.get((index - 1)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index - 1)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index-1);
-        }
-        if(index < 79 && ((index - 7) % 8 != 0)) {
-            cell_tvs.get((index + 1)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index + 1)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index+1);
-        }
+        public void addToQueue(int index) {
+            if(index > 7) {
+                if(!set.contains((index-8)) && !visited.get(index-8)) {
+                    cells.add(index-8);
+                }
+            }
+            if(index < 72) {
 
-        // /
-        if(index > 7 && ((index - 7) % 8 != 0)) {
-            cell_tvs.get((index - 7)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index - 7)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index-7);
-        }
-        if(index < 72 && (index % 8 != 0)) {
-            cell_tvs.get((index + 7)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index + 7)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index+7);
-        }
+                if(!set.contains((index+8))&& !visited.get(index+8)) {
+                    cells.add(index+8);
+                }
+            }
 
-        // \
-        if(index > 7 && (index % 8 != 0)) {
-            cell_tvs.get((index - 9)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index - 9)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index-9);
-        }
+            // - _ -
+            if(index > 0 && ((index % 8) != 0) && !visited.get(index-1)) {
 
-        if(index < 72 && ((index - 7) % 8 != 0)) {
-            cell_tvs.get((index + 9)).setBackgroundColor(Color.LTGRAY);
-            cell_tvs.get((index + 9)).setTextColor(Color.GRAY);
-            checkNeighboringCells(index+9);
+                if(!set.contains((index-1))) {
+                    cells.add(index-1);
+                }
+            }
+            if(index < 79 && ((index - 7) % 8 != 0) && !visited.get(index+1)) {
+                if(!set.contains((index+1))) {
+                    cells.add(index+1);
+                }
+            }
+
+            // /
+            if(index > 7 && ((index - 7) % 8 != 0) && !visited.get(index-7)) {
+                if(!set.contains((index-7))) {
+                    cells.add(index-7);
+                }
+            }
+            if(index < 72 && (index % 8 != 0) && !visited.get(index+7)) {
+                if(!set.contains((index+7))) {
+                    cells.add(index+7);
+                }
+            }
+
+            // \
+            if(index > 7 && ((index % 8) != 0) && !visited.get(index-9)) {
+                if(!set.contains((index-9))) {
+                    cells.add(index-9);
+                }
+            }
+
+            if(index < 72 && ((index - 7) % 8 != 0) && !visited.get(index+9)) {
+                if(!set.contains((index+9))) {
+                    cells.add(index+9);
+                }
+            }
+
         }
-    }
 }
 
