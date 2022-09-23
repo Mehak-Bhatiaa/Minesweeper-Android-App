@@ -194,9 +194,6 @@ public class MainActivity extends AppCompatActivity {
         while(set.size() < 4) {
             set.add(random.nextInt(80));
         }
-        for (int i: set) {
-            cell_tvs.get(i).setText(getString(R.string.mine));
-        }
     }
 
     private void checkNeighboringCells(int index) {
