@@ -7,20 +7,42 @@
     tools:context=".ResultActivity">
 
     <TextView
+        android:id="@+id/resultView01"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Used 12 seconds"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="Used 12 seconds. You won! Good job"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="You won! Good job"
+
+
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="50dp"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal|center_vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/resultView01"
+
+    tools:ignore="MissingConstraints">
+    <Button
+        android:id="@+id/playAgain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PLAY AGAIN"
+        android:onClick="onClickButton"
+        tools:ignore="MissingConstraints"
+         />
+    />
+</LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

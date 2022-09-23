@@ -4,7 +4,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.gridlayout.widget.GridLayout;
 
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,20 +22,19 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity {
     private int clock = 0;
     private int flag_count = 4;
+    private int picked_flags = 0;
+
     private boolean running = true;
     private boolean mining = true;
     boolean winning = true;
     boolean playing = true;
     private int clicked_index;
+    private int num_visits = 0;
     ArrayList<Boolean> visited = new ArrayList<Boolean>();
+    ArrayList<Boolean> clicked = new ArrayList<Boolean>();
     Queue<Integer> cells = new LinkedList<Integer>();
     Set<Integer> set;
     private ArrayList<TextView> cell_tvs;
-
-//    private int dpToPixel(int dp) {
-//        float density = Resources.getSystem().getDisplayMetrics().density;
-//        return Math.round(dp * density);
-//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
         for(int i = 0; i < 80; i++) {
             visited.add(false);
+            clicked.add(false);
         }
 
         runTimer();
@@ -90,16 +89,19 @@ public class MainActivity extends AppCompatActivity {
         TextView tv = (TextView) view;
         final TextView flagView = (TextView) findViewById(R.id.textView01);
         int n = findIndexOfCellTextView(tv);
-    if(!winning && mining) {
+    if(!playing && mining) {
+        final TextView timeView = (TextView) findViewById(R.id.textView03);
+        String time = String.valueOf(clock);
         Intent intent = new Intent(this, ResultActivity.class);
-        intent.putExtra("Used seconds: ",clock);
-        intent.putExtra("You", winning);
+        intent.putExtra("time",time);
+        intent.putExtra("result", winning);
         startActivity(intent);
         return;
     }
+
         tv.setText(String.valueOf(n));
         clicked_index = n;
-        tv.setTextColor(Color.GRAY);
+        tv.setTextColor(Color.LTGRAY);
         tv.setBackgroundColor(Color.LTGRAY);
 
         if(set.contains(clicked_index) && mining){
@@ -107,22 +109,41 @@ public class MainActivity extends AppCompatActivity {
             winning = false;
             playing = false;
             running = false;
-
             return;
         }
 
         if(mining) {
+            flag_count += picked_flags;
+            picked_flags = 0;
+            flagView.setText(String.valueOf(flag_count));
             cells.add(clicked_index);
+            clicked.set(clicked_index,true);
+            visited.set(clicked_index, true);
             while (!cells.isEmpty()) {
                 checkNeighboringCells(cells.peek());
             }
+//            flag_count = 0;
+            num_visits = 0;
+            for(int i = 0; i < 80; i++) {
+                if(visited.get(i) == true) {
+                num_visits++;
+                }
+            }
         }
 
-        if(!mining) {
+        if(!mining && visited.get(clicked_index) == false && (cell_tvs.get(clicked_index).getText() != getString(R.string.flag))) {
             cell_tvs.get(clicked_index).setText(getString(R.string.flag));
             cell_tvs.get(clicked_index).setBackgroundColor(Color.GREEN);
             flag_count--;
             flagView.setText(String.valueOf(flag_count));
+            if(!set.contains(clicked_index) && (cell_tvs.get(clicked_index).getText() == getString(R.string.flag))){
+                picked_flags++;
+            }
+        }
+
+        if(num_visits >= 76) {
+            winning = true;
+            playing = false;
         }
     }
 
@@ -134,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onToggle(View view) {
         final TextView modeView = (TextView) findViewById(R.id.textView31);
+
         if(mining) {
             mining = false;
             modeView.setText(getString(R.string.flag));
@@ -179,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkNeighboringCells(int index) {
         int mine_count = 0;
-        visited.set(index, true);
         cell_tvs.get((index)).setBackgroundColor(Color.LTGRAY);
         cell_tvs.get((index)).setTextColor(Color.GRAY);
         if(set.contains(index)) {
@@ -187,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
             cell_tvs.get(index).setText(getString(R.string.mine));
             return;
         }
+        visited.set(index, true);
         // top and bottom
         if(index > 7) {
             if(set.contains((index-8))) {
@@ -237,6 +259,7 @@ public class MainActivity extends AppCompatActivity {
                 mine_count++;
             }
         }
+        cell_tvs.get(index).setTextColor(Color.GRAY);
         if(mine_count != 0) {
             cell_tvs.get(index).setText(String.valueOf(mine_count));
         }
@@ -247,66 +270,6 @@ public class MainActivity extends AppCompatActivity {
         }
         cells.remove();
     }
-
-//    private void revealNeighboringCells(int index, int mine_count) {
-//        if (mine_count == 0) {
-//            if (index > 7) {
-//                cell_tvs.get((index - 8)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index - 8)).setTextColor(Color.GRAY);
-////                cells.add((index - 8));
-////            checkNeighboringCells(index - 8);
-//            }
-//            if (index < 72) {
-//                cell_tvs.get((index + 8)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index + 8)).setTextColor(Color.GRAY);
-////                cells.add((index + 8));
-////            checkNeighboringCells(index + 8);
-//            }
-//
-//            // - _ -
-//            if (index > 0 && ((index % 8) != 0)) {
-//                cell_tvs.get((index - 1)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index - 1)).setTextColor(Color.GRAY);
-////            cells.add((index - 1));
-////                checkNeighboringCells(index - 1);
-//            }
-//            if (index < 79 && ((index - 7) % 8 != 0)) {
-//                cell_tvs.get((index + 1)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index + 1)).setTextColor(Color.GRAY);
-////            checkNeighboringCells(index + 1);
-////                cells.add((index + 1));
-//            }
-//
-//            // /
-//            if (index > 7 && ((index - 7) % 8 != 0)) {
-//                cell_tvs.get((index - 7)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index - 7)).setTextColor(Color.GRAY);
-////                cells.add((index - 7));
-////            checkNeighboringCells(index - 7);
-//            }
-//            if (index < 72 && (index % 8 != 0)) {
-//                cell_tvs.get((index + 7)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index + 7)).setTextColor(Color.GRAY);
-////                cells.add((index + 7));
-////            checkNeighboringCells(index + 7);
-//            }
-//
-//            // \
-//            if (index > 7 && (index % 8 != 0)) {
-//                cell_tvs.get((index - 9)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index - 9)).setTextColor(Color.GRAY);
-////                cells.add((index - 9));
-////            checkNeighboringCells(index - 9);
-//            }
-//
-//            if (index < 72 && ((index - 7) % 8 != 0)) {
-//                cell_tvs.get((index + 9)).setBackgroundColor(Color.LTGRAY);
-//                cell_tvs.get((index + 9)).setTextColor(Color.GRAY);
-////                cells.add((index + 9));
-////            checkNeighboringCells(index + 9);
-//            }
-//        }
-//    }
 
         public void addToQueue(int index) {
             if(index > 7) {
